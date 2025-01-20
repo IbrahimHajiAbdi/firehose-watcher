@@ -1,0 +1,7 @@
+media/
+cipher/
+plain/ 
+*.json
+*.py
+.env
+go.sum

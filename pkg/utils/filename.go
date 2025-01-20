@@ -10,7 +10,7 @@ import (
 func MakeFilepath(directory string, rkey string, handle string, text string, mediaType string, maxBytes int) string {
 	filename := fmt.Sprintf("%s_%s_%s", rkey, handle, text)
 	filename = strings.Replace(filename, "/", "", -1)
-	filename = FilenameLengthLimit(filename, maxBytes-len(mediaType)+2)
+	filename = FilenameLengthLimit(filename, maxBytes-(len(mediaType)+2))
 	filepath := fmt.Sprintf("%s/%s.%s", directory, filename, mediaType)
 	return path.Clean(filepath)
 }

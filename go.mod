@@ -7,7 +7,7 @@ toolchain go1.23.4
 require (
 	github.com/bluesky-social/indigo v0.0.0-20241223053147-c130614850e5
 	github.com/gorilla/websocket v1.5.3
-	github.com/joho/godotenv v1.5.1
+	github.com/spf13/cobra v1.8.1
 )
 
 require (
@@ -88,7 +88,6 @@ require (
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
-	github.com/spf13/cobra v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/whyrusleeping/cbor v0.0.0-20171005072247-63513f603b11 // indirect
 	github.com/whyrusleeping/cbor-gen v0.2.1-0.20241030202151-b7a6831be65e // indirect

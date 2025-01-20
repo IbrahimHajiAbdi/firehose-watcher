@@ -2,13 +2,24 @@ package core
 
 import (
 	"encoding/json"
-	"firehose/api"
-	"firehose/utils"
+	"firehose/pkg/api"
+	"firehose/pkg/utils"
 	"fmt"
 	"time"
+
+	"github.com/bluesky-social/indigo/api/bsky"
 )
 
-func downloadPost(repo string, repo_path string, directory string) error {
+type PostDetails struct {
+	Handle   string
+	Text     string
+	Repo     string
+	Response *bsky.FeedPost
+	Rkey     string
+	Media    *utils.Media
+}
+
+func DownloadPost(repo string, repo_path string, directory string) error {
 	atUri, err := fetchPostIdentifier(repo, repo_path)
 	if err != nil {
 		fmt.Println(err)
@@ -33,7 +44,7 @@ func downloadPost(repo string, repo_path string, directory string) error {
 
 	filename := utils.MakeFilepath(directory, postDetails.Rkey, postDetails.Handle, postDetails.Text, "json", 255)
 
-	bytes, err := json.Marshal(postDetails.Response)
+	bytes, err := json.MarshalIndent(postDetails.Response, "", "	")
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -45,7 +56,7 @@ func downloadPost(repo string, repo_path string, directory string) error {
 	return nil
 }
 
-func downloadBlobs(media *Media, postDetails *PostDetails, directory string) error {
+func downloadBlobs(media *utils.Media, postDetails *PostDetails, directory string) error {
 	filename := utils.MakeFilepath(directory, postDetails.Rkey, postDetails.Handle, postDetails.Text, postDetails.Media.MediaType, 255)
 	if media.Image_Cid != nil {
 		for _, imageCid := range media.Image_Cid {

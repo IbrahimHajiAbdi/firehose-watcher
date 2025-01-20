@@ -2,7 +2,8 @@ package core
 
 import (
 	"encoding/json"
-	"firehose/api"
+	"firehose/pkg/api"
+	"firehose/pkg/utils"
 	"fmt"
 	"regexp"
 
@@ -82,7 +83,7 @@ func fetchPostDetails(atUri string) (*PostDetails, error) {
 	postDetails.Repo = post.Author.Did
 
 	if record.Embed != nil {
-		postDetails.Media = extractMedia(record.Embed)
+		postDetails.Media = utils.ExtractMedia(record.Embed)
 
 	}
 

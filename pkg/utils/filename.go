@@ -2,15 +2,17 @@ package utils
 
 import (
 	"fmt"
+	"path"
 	"strings"
 	"unicode/utf8"
 )
 
 func MakeFilepath(directory string, rkey string, handle string, text string, mediaType string, maxBytes int) string {
-	filename := fmt.Sprintf("%s_%s_%s.%s", rkey, handle, text, mediaType)
+	filename := fmt.Sprintf("%s_%s_%s", rkey, handle, text)
 	filename = strings.Replace(filename, "/", "", -1)
-	filepath := fmt.Sprintf("%s/%s", directory, filename)
-	return FilenameLengthLimit(filepath, maxBytes)
+	filename = FilenameLengthLimit(filename, maxBytes-len(mediaType)+2)
+	filepath := fmt.Sprintf("%s/%s.%s", directory, filename, mediaType)
+	return path.Clean(filepath)
 }
 
 func FilenameLengthLimit(filename string, maxBytes int) string {

@@ -1,0 +1,60 @@
+package cmd
+
+import (
+	"context"
+	"firehose/pkg/core"
+	"firehose/pkg/utils"
+	"fmt"
+	"net/http"
+	"os"
+
+	"github.com/bluesky-social/indigo/events"
+	"github.com/bluesky-social/indigo/events/schedulers/sequential"
+	"github.com/gorilla/websocket"
+	"github.com/spf13/cobra"
+)
+
+var (
+	handle    string
+	directory string
+)
+
+var rootCmd = &cobra.Command{
+	Use:   "fw",
+	Short: "fw is a way to subscribe to a repo and download all likes, reposts and posts on Bluesky social media",
+	Run: func(cmd *cobra.Command, args []string) {
+		uri := "wss://bsky.network/xrpc/com.atproto.sync.subscribeRepos"
+		con, _, err := websocket.DefaultDialer.Dial(uri, http.Header{})
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		did, err := utils.ResolveHandle(handle)
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		rsc := core.RepoCommit(did, directory)
+
+		sched := sequential.NewScheduler("myfirehose", rsc.EventHandler)
+		events.HandleRepoStream(context.Background(), con, sched, nil)
+
+	},
+}
+
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+func init() {
+	rootCmd.PersistentFlags().StringVar(&handle, "handle", "", "Handle of the desired account")
+	rootCmd.PersistentFlags().StringVar(&directory, "directory", "", "Directory to download media")
+	rootCmd.MarkPersistentFlagRequired("handle")
+	rootCmd.MarkPersistentFlagRequired("directory")
+}

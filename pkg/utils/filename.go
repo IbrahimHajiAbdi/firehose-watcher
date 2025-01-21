@@ -7,11 +7,17 @@ import (
 	"unicode/utf8"
 )
 
-func MakeFilepath(directory string, rkey string, handle string, text string, mediaType string, maxBytes int) string {
+func MakeFilepath(directory string, rkey string, handle string, text string, mediaType string, i int, maxBytes int) string {
 	filename := fmt.Sprintf("%s_%s_%s", rkey, handle, text)
 	filename = strings.Replace(filename, "/", "", -1)
-	filename = FilenameLengthLimit(filename, maxBytes-(len(mediaType)+2))
-	filepath := fmt.Sprintf("%s/%s.%s", directory, filename, mediaType)
+	var filepath string
+	if i > 0 {
+		filename = FilenameLengthLimit(filename, maxBytes-(len(mediaType)+2+i))
+		filepath = fmt.Sprintf("%s/%s_%d.%s", directory, filename, i, mediaType)
+	} else {
+		filename = FilenameLengthLimit(filename, maxBytes-(len(mediaType)+1))
+		filepath = fmt.Sprintf("%s/%s.%s", directory, filename, mediaType)
+	}
 	return path.Clean(filepath)
 }
 

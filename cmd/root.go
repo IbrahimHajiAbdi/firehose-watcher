@@ -19,10 +19,17 @@ var (
 	directory string
 )
 
+// TODO: Add tests
+// TODO: Add graceful failure and logging what failed
 var rootCmd = &cobra.Command{
 	Use:   "fw",
-	Short: "fw is a way to subscribe to a repo and download all likes, reposts and posts on Bluesky social media",
+	Short: "fw is a way to subscribe to a repo and download all likes, reposts and posts on Bluesky social media as it is committed to the repo",
 	Run: func(cmd *cobra.Command, args []string) {
+		if _, err := os.Stat(directory); err != nil {
+			fmt.Println(err)
+			return
+		}
+
 		uri := "wss://bsky.network/xrpc/com.atproto.sync.subscribeRepos"
 		con, _, err := websocket.DefaultDialer.Dial(uri, http.Header{})
 		if err != nil {
@@ -36,6 +43,8 @@ var rootCmd = &cobra.Command{
 			fmt.Println(err)
 			return
 		}
+
+		fmt.Println("Now subsribed to:", handle)
 
 		rsc := core.RepoCommit(did, directory)
 

@@ -42,11 +42,10 @@ func DownloadPost(repo string, repo_path string, directory string) error {
 		}
 	}
 
-	filename := utils.MakeFilepath(directory, postDetails.Rkey, postDetails.Handle, postDetails.Text, "json", 255)
+	filename := utils.MakeFilepath(directory, postDetails.Rkey, postDetails.Handle, postDetails.Text, "json", 0, 255)
 
 	bytes, err := json.MarshalIndent(postDetails.Response, "", "	")
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	err = utils.WriteFile(filename, &bytes)
@@ -57,14 +56,26 @@ func DownloadPost(repo string, repo_path string, directory string) error {
 }
 
 func downloadBlobs(media *utils.Media, postDetails *PostDetails, directory string) error {
-	filename := utils.MakeFilepath(directory, postDetails.Rkey, postDetails.Handle, postDetails.Text, postDetails.Media.MediaType, 255)
-	if media.Image_Cid != nil {
-		for _, imageCid := range media.Image_Cid {
+	if media.ImageCid != nil {
+		for i, imageCid := range media.ImageCid {
 			res, err := api.GetBlob(postDetails.Repo, imageCid)
 			if err != nil {
 				fmt.Println(err)
 				return err
 			}
+			number := 0
+			if len(media.ImageCid) > 1 {
+				number = i + 1
+			}
+			filename := utils.MakeFilepath(
+				directory,
+				postDetails.Rkey,
+				postDetails.Handle,
+				postDetails.Text,
+				postDetails.Media.MediaType,
+				number,
+				255,
+			)
 			err = utils.WriteFile(filename, res)
 			if err != nil {
 				return err
@@ -72,12 +83,21 @@ func downloadBlobs(media *utils.Media, postDetails *PostDetails, directory strin
 			time.Sleep(500 * time.Millisecond)
 		}
 	}
-	if media.Video_Cid != "" {
-		res, err := api.GetBlob(postDetails.Repo, media.Video_Cid)
+	if media.VideoCid != "" {
+		res, err := api.GetBlob(postDetails.Repo, media.VideoCid)
 		if err != nil {
 			fmt.Println(err)
 			return err
 		}
+		filename := utils.MakeFilepath(
+			directory,
+			postDetails.Rkey,
+			postDetails.Handle,
+			postDetails.Text,
+			postDetails.Media.MediaType,
+			0,
+			255,
+		)
 		err = utils.WriteFile(filename, res)
 		if err != nil {
 			return err

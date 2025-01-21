@@ -5,20 +5,15 @@ import (
 	"firehose/pkg/api"
 	"firehose/pkg/utils"
 	"fmt"
-	"regexp"
 
 	"github.com/bluesky-social/indigo/api/bsky"
 )
 
 func fetchPostIdentifier(repo string, path string) (string, error) {
-	re := regexp.MustCompile(`[^/]*$`)
-	rkey := re.FindString(path)
-
-	re = regexp.MustCompile(`^[^/]*`)
-	collection := re.FindString(path)
+	rkey := utils.FindExpression("[^/]*$", path)
+	collection := utils.FindExpression("^[^/]*", path)
 
 	res, err := api.GetRecord(collection, repo, rkey)
-
 	if err != nil {
 		fmt.Println(err)
 		return "", err
@@ -60,8 +55,7 @@ func fetchPostDetails(atUri string) (*PostDetails, error) {
 	post := res.Posts[0]
 	postDetails.Handle = post.Author.Handle
 
-	re := regexp.MustCompile("[^/]*$")
-	rkey := re.FindString(post.Uri)
+	rkey := utils.FindExpression("[^/]*$", post.Uri)
 	postDetails.Rkey = rkey
 
 	bytes, err := post.Record.MarshalJSON()

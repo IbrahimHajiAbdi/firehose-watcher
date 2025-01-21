@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/bluesky-social/indigo/api/atproto"
 	"github.com/bluesky-social/indigo/events"
@@ -14,7 +15,7 @@ func RepoCommit(did *atproto.IdentityResolveHandle_Output, directory string) *ev
 				return nil
 			}
 
-			if evt.Ops[0].Action == "create" {
+			if evt.Ops[0].Action == "create" && strings.Contains(evt.Ops[0].Path, "feed") {
 				go DownloadPost(evt.Repo, evt.Ops[0].Path, directory)
 			}
 

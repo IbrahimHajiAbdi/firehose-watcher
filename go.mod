@@ -6,6 +6,7 @@ toolchain go1.23.4
 
 require (
 	github.com/bluesky-social/indigo v0.0.0-20241223053147-c130614850e5
+	github.com/cenkalti/backoff/v5 v5.0.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/spf13/cobra v1.8.1
 )

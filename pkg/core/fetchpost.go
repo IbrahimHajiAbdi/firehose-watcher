@@ -9,11 +9,11 @@ import (
 	"github.com/bluesky-social/indigo/api/bsky"
 )
 
-func fetchPostIdentifier(repo string, path string) (string, error) {
+func fetchPostIdentifier(client *api.DefaultAPIClient, repo, path string) (string, error) {
 	rkey := utils.FindExpression("[^/]*$", path)
 	collection := utils.FindExpression("^[^/]*", path)
 
-	res, err := api.GetRecord(collection, repo, rkey)
+	res, err := api.GetRecord(client, collection, repo, rkey)
 	if err != nil {
 		fmt.Println(err)
 		return "", err
@@ -36,8 +36,8 @@ func fetchPostIdentifier(repo string, path string) (string, error) {
 	return postDetails.Subject.Uri, nil
 }
 
-func fetchPostDetails(atUri string) (*PostDetails, error) {
-	res, err := api.GetPost(atUri)
+func fetchPostDetails(client *api.DefaultAPIClient, atUri string) (*PostDetails, error) {
+	res, err := api.GetPost(client, atUri)
 	if err != nil {
 		fmt.Println(err)
 		fmt.Println(atUri)

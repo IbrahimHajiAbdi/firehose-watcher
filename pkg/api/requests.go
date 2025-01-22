@@ -10,17 +10,41 @@ import (
 	"github.com/cenkalti/backoff/v5"
 )
 
-var opts = backoff.ExponentialBackOff{
-	InitialInterval:     1 * time.Second,
-	RandomizationFactor: 0.5,
-	Multiplier:          2,
-	MaxInterval:         32 * time.Second,
+type APIClient interface {
+	SyncGetBlob(ctx context.Context, client *xrpc.Client, cid, repo string) ([]byte, error)
+	RepoGetRecord(ctx context.Context, client *xrpc.Client, cid, collection, repo, rkey string) (*atproto.RepoGetRecord_Output, error)
+	FeedGetPosts(ctx context.Context, client *xrpc.Client, uris []string) (*bsky.FeedGetPosts_Output, error)
 }
 
-func GetBlob(repo string, cid string) (*[]byte, error) {
+type DefaultAPIClient struct{}
+
+func (d *DefaultAPIClient) SyncGetBlob(ctx context.Context, client *xrpc.Client, cid, repo string) ([]byte, error) {
+	return atproto.SyncGetBlob(ctx, client, cid, repo)
+}
+
+func (d *DefaultAPIClient) RepoGetRecord(ctx context.Context, client *xrpc.Client, cid, collection, repo, rkey string) (*atproto.RepoGetRecord_Output, error) {
+	return atproto.RepoGetRecord(ctx, client, cid, collection, repo, rkey)
+}
+
+func (d *DefaultAPIClient) FeedGetPosts(ctx context.Context, client *xrpc.Client, uris []string) (*bsky.FeedGetPosts_Output, error) {
+	return bsky.FeedGetPosts(ctx, client, uris)
+}
+
+var (
+	BackoffOpts = backoff.WithBackOff(
+		&backoff.ExponentialBackOff{
+			InitialInterval:     1 * time.Second,
+			RandomizationFactor: 0.5,
+			Multiplier:          2,
+			MaxInterval:         32 * time.Second,
+		})
+	MaxRetries = backoff.WithMaxTries(5)
+)
+
+func GetBlob(client APIClient, repo, cid string) (*[]byte, error) {
 	operation := func() (*[]byte, error) {
 		ctx := context.Background()
-		res, err := atproto.SyncGetBlob(ctx, &xrpc.Client{
+		res, err := client.SyncGetBlob(ctx, &xrpc.Client{
 			Host: "https://bsky.social",
 		}, cid, repo)
 		if err != nil {
@@ -28,21 +52,17 @@ func GetBlob(repo string, cid string) (*[]byte, error) {
 		}
 		return &res, nil
 	}
-	res, err := backoff.Retry(
-		context.TODO(),
-		operation,
-		backoff.WithBackOff(&opts),
-	)
+	res, err := backoff.Retry(context.TODO(), operation, BackoffOpts, MaxRetries)
 	if err != nil {
 		return nil, err
 	}
 	return res, nil
 }
 
-func GetRecord(collection string, repo string, rkey string) (*atproto.RepoGetRecord_Output, error) {
+func GetRecord(client APIClient, collection, repo, rkey string) (*atproto.RepoGetRecord_Output, error) {
 	operation := func() (*atproto.RepoGetRecord_Output, error) {
 		ctx := context.Background()
-		res, err := atproto.RepoGetRecord(ctx, &xrpc.Client{
+		res, err := client.RepoGetRecord(ctx, &xrpc.Client{
 			Host: "https://bsky.social",
 		}, "", collection, repo, rkey)
 		if err != nil {
@@ -50,21 +70,17 @@ func GetRecord(collection string, repo string, rkey string) (*atproto.RepoGetRec
 		}
 		return res, nil
 	}
-	res, err := backoff.Retry(
-		context.TODO(),
-		operation,
-		backoff.WithBackOff(&opts),
-	)
+	res, err := backoff.Retry(context.TODO(), operation, BackoffOpts, MaxRetries)
 	if err != nil {
 		return nil, err
 	}
 	return res, nil
 }
 
-func GetPost(atUri string) (*bsky.FeedGetPosts_Output, error) {
+func GetPost(client APIClient, atUri string) (*bsky.FeedGetPosts_Output, error) {
 	operation := func() (*bsky.FeedGetPosts_Output, error) {
 		ctx := context.Background()
-		res, err := bsky.FeedGetPosts(ctx, &xrpc.Client{
+		res, err := client.FeedGetPosts(ctx, &xrpc.Client{
 			Host: "https://public.api.bsky.app",
 		}, []string{atUri})
 		if err != nil {
@@ -72,11 +88,7 @@ func GetPost(atUri string) (*bsky.FeedGetPosts_Output, error) {
 		}
 		return res, nil
 	}
-	res, err := backoff.Retry(
-		context.TODO(),
-		operation,
-		backoff.WithBackOff(&opts),
-	)
+	res, err := backoff.Retry(context.TODO(), operation, BackoffOpts, MaxRetries)
 	if err != nil {
 		return nil, err
 	}

@@ -19,26 +19,26 @@ type PostDetails struct {
 	Media    *utils.Media
 }
 
-func DownloadPost(repo string, repo_path string, directory string) error {
-	atUri, err := fetchPostIdentifier(repo, repo_path)
+func DownloadPost(client *api.DefaultAPIClient, repo string, repo_path string, directory string) {
+	atUri, err := fetchPostIdentifier(client, repo, repo_path)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return
 	}
 
-	postDetails, err := fetchPostDetails(atUri)
+	postDetails, err := fetchPostDetails(client, atUri)
 	if err != nil {
 		fmt.Println(err)
-		return err
+		return
 	}
 
 	if postDetails.Media != nil {
 		media := postDetails.Media
 
-		err = downloadBlobs(media, postDetails, directory)
+		err = downloadBlobs(client, media, postDetails, directory)
 		if err != nil {
 			fmt.Println(err)
-			return err
+			return
 		}
 	}
 
@@ -46,19 +46,20 @@ func DownloadPost(repo string, repo_path string, directory string) error {
 
 	bytes, err := json.MarshalIndent(postDetails.Response, "", "	")
 	if err != nil {
-		return err
+		fmt.Println(err)
+		return
 	}
 	err = utils.WriteFile(filename, &bytes)
 	if err != nil {
-		return err
+		fmt.Println(err)
+		return
 	}
-	return nil
 }
 
-func downloadBlobs(media *utils.Media, postDetails *PostDetails, directory string) error {
+func downloadBlobs(client *api.DefaultAPIClient, media *utils.Media, postDetails *PostDetails, directory string) error {
 	if media.ImageCid != nil {
 		for i, imageCid := range media.ImageCid {
-			res, err := api.GetBlob(postDetails.Repo, imageCid)
+			res, err := api.GetBlob(client, postDetails.Repo, imageCid)
 			if err != nil {
 				fmt.Println(err)
 				return err
@@ -84,7 +85,7 @@ func downloadBlobs(media *utils.Media, postDetails *PostDetails, directory strin
 		}
 	}
 	if media.VideoCid != "" {
-		res, err := api.GetBlob(postDetails.Repo, media.VideoCid)
+		res, err := api.GetBlob(client, postDetails.Repo, media.VideoCid)
 		if err != nil {
 			fmt.Println(err)
 			return err

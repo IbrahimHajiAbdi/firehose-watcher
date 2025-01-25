@@ -21,13 +21,13 @@ type PostDetails struct {
 
 func DownloadPost(APIClient api.APIClient, FSClient utils.FileSystem, repo string, repo_path string, directory string) {
 
-	atUri, err := fetchPostIdentifier(APIClient, repo, repo_path)
+	atUri, err := FetchPostIdentifier(APIClient, repo, repo_path)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	postDetails, err := fetchPostDetails(APIClient, atUri)
+	postDetails, err := FetchPostDetails(APIClient, atUri)
 	if err != nil {
 		fmt.Println(err)
 		return

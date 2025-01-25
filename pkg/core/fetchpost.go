@@ -9,7 +9,7 @@ import (
 	"github.com/bluesky-social/indigo/api/bsky"
 )
 
-func fetchPostIdentifier(client api.APIClient, repo, path string) (string, error) {
+func FetchPostIdentifier(client api.APIClient, repo, path string) (string, error) {
 	rkey := utils.FindExpression("[^/]*$", path)
 	collection := utils.FindExpression("^[^/]*", path)
 
@@ -36,7 +36,7 @@ func fetchPostIdentifier(client api.APIClient, repo, path string) (string, error
 	return postDetails.Subject.Uri, nil
 }
 
-func fetchPostDetails(client api.APIClient, atUri string) (*PostDetails, error) {
+func FetchPostDetails(client api.APIClient, atUri string) (*PostDetails, error) {
 	res, err := api.GetPost(client, atUri)
 	if err != nil {
 		fmt.Println(err)
@@ -48,8 +48,7 @@ func fetchPostDetails(client api.APIClient, atUri string) (*PostDetails, error) 
 	var record bsky.FeedPost
 
 	if len(res.Posts) < 1 {
-		fmt.Println("There is no post with this AT-URI: ", atUri)
-		return nil, nil
+		return nil, fmt.Errorf("there is no post with this AT-URI: %s", atUri)
 	}
 
 	post := res.Posts[0]

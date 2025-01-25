@@ -37,7 +37,8 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
-		did, err := utils.ResolveHandle(handle)
+		client := utils.DefaultHandleResolver{}
+		did, err := utils.ResolveHandle(&client, handle)
 
 		if err != nil {
 			fmt.Println(err)

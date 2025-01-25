@@ -5,10 +5,16 @@ Firehose-Watcher is a CLI made in Go that subscribes to a given account and down
 ## Installation
 You will need [Go](https://go.dev/doc/install) installed.
 
-Clone the repository:
+Clone the repository and ``cd`` into:
 
 ```bash
 git clone git@github.com:IbrahimHajiAbdi/firehose-watcher.git
+cd firehose-watcher
+```
+
+Then install all the dependencies:
+```bash
+go mod tidy
 ```
 
 Then build the program:

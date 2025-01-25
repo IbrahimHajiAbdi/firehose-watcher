@@ -19,14 +19,15 @@ type PostDetails struct {
 	Media    *utils.Media
 }
 
-func DownloadPost(client *api.DefaultAPIClient, repo string, repo_path string, directory string) {
-	atUri, err := fetchPostIdentifier(client, repo, repo_path)
+func DownloadPost(APIClient api.APIClient, FSClient utils.FileSystem, repo string, repo_path string, directory string) {
+
+	atUri, err := fetchPostIdentifier(APIClient, repo, repo_path)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	postDetails, err := fetchPostDetails(client, atUri)
+	postDetails, err := fetchPostDetails(APIClient, atUri)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -35,7 +36,7 @@ func DownloadPost(client *api.DefaultAPIClient, repo string, repo_path string, d
 	if postDetails.Media != nil {
 		media := postDetails.Media
 
-		err = downloadBlobs(client, media, postDetails, directory)
+		err = downloadBlobs(APIClient, FSClient, media, postDetails, directory)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -49,17 +50,17 @@ func DownloadPost(client *api.DefaultAPIClient, repo string, repo_path string, d
 		fmt.Println(err)
 		return
 	}
-	err = utils.WriteFile(filename, &bytes)
+	err = utils.WriteFile(FSClient, filename, &bytes)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 }
 
-func downloadBlobs(client *api.DefaultAPIClient, media *utils.Media, postDetails *PostDetails, directory string) error {
+func downloadBlobs(APIClient api.APIClient, FSClient utils.FileSystem, media *utils.Media, postDetails *PostDetails, directory string) error {
 	if media.ImageCid != nil {
 		for i, imageCid := range media.ImageCid {
-			res, err := api.GetBlob(client, postDetails.Repo, imageCid)
+			res, err := api.GetBlob(APIClient, postDetails.Repo, imageCid)
 			if err != nil {
 				fmt.Println(err)
 				return err
@@ -77,7 +78,7 @@ func downloadBlobs(client *api.DefaultAPIClient, media *utils.Media, postDetails
 				number,
 				255,
 			)
-			err = utils.WriteFile(filename, res)
+			err = utils.WriteFile(FSClient, filename, res)
 			if err != nil {
 				return err
 			}
@@ -85,7 +86,7 @@ func downloadBlobs(client *api.DefaultAPIClient, media *utils.Media, postDetails
 		}
 	}
 	if media.VideoCid != "" {
-		res, err := api.GetBlob(client, postDetails.Repo, media.VideoCid)
+		res, err := api.GetBlob(APIClient, postDetails.Repo, media.VideoCid)
 		if err != nil {
 			fmt.Println(err)
 			return err
@@ -99,7 +100,7 @@ func downloadBlobs(client *api.DefaultAPIClient, media *utils.Media, postDetails
 			0,
 			255,
 		)
-		err = utils.WriteFile(filename, res)
+		err = utils.WriteFile(FSClient, filename, res)
 		if err != nil {
 			return err
 		}

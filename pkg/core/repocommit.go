@@ -2,6 +2,7 @@ package core
 
 import (
 	"firehose/pkg/api"
+	"firehose/pkg/utils"
 	"fmt"
 	"strings"
 
@@ -10,7 +11,8 @@ import (
 )
 
 func RepoCommit(did *atproto.IdentityResolveHandle_Output, directory string) *events.RepoStreamCallbacks {
-	client := api.DefaultAPIClient{}
+	APIClient := api.DefaultAPIClient{}
+	FSClient := utils.DefaultFileSystem{}
 	var rsc = &events.RepoStreamCallbacks{
 		RepoCommit: func(evt *atproto.SyncSubscribeRepos_Commit) error {
 			if evt.Repo != did.Did {
@@ -18,7 +20,7 @@ func RepoCommit(did *atproto.IdentityResolveHandle_Output, directory string) *ev
 			}
 
 			if evt.Ops[0].Action == "create" && strings.Contains(evt.Ops[0].Path, "feed") {
-				go DownloadPost(&client, evt.Repo, evt.Ops[0].Path, directory)
+				go DownloadPost(&APIClient, &FSClient, evt.Repo, evt.Ops[0].Path, directory)
 			}
 
 			for _, op := range evt.Ops {

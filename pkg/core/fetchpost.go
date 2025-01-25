@@ -9,7 +9,7 @@ import (
 	"github.com/bluesky-social/indigo/api/bsky"
 )
 
-func fetchPostIdentifier(client *api.DefaultAPIClient, repo, path string) (string, error) {
+func fetchPostIdentifier(client api.APIClient, repo, path string) (string, error) {
 	rkey := utils.FindExpression("[^/]*$", path)
 	collection := utils.FindExpression("^[^/]*", path)
 
@@ -36,7 +36,7 @@ func fetchPostIdentifier(client *api.DefaultAPIClient, repo, path string) (strin
 	return postDetails.Subject.Uri, nil
 }
 
-func fetchPostDetails(client *api.DefaultAPIClient, atUri string) (*PostDetails, error) {
+func fetchPostDetails(client api.APIClient, atUri string) (*PostDetails, error) {
 	res, err := api.GetPost(client, atUri)
 	if err != nil {
 		fmt.Println(err)
@@ -78,7 +78,6 @@ func fetchPostDetails(client *api.DefaultAPIClient, atUri string) (*PostDetails,
 
 	if record.Embed != nil {
 		postDetails.Media = utils.ExtractMedia(record.Embed)
-
 	}
 
 	return &postDetails, nil

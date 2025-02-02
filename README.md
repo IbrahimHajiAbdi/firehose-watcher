@@ -35,12 +35,12 @@ The files will be named in this format: ``{rkey}_{handle}_{text}``.
 
 ### Example
 
-### Linux/Unix
+#### Linux/Unix
 ```bash
 ./fw --handle bsky.app --directory media
 ```
 
-### Windows
+#### Windows
 ```bash
 ./fw.exe --handle bsky.app --directory media
 ```

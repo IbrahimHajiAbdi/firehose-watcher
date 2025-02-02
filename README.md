@@ -18,9 +18,14 @@ go mod tidy
 ```
 
 Then build the program:
-
+### Linux
 ```bash
 go build -o fw
+```
+
+### Windows
+```bash
+go build -o fw.exe
 ```
 
 ## Usage
@@ -30,8 +35,14 @@ The files will be named in this format: ``{rkey}_{handle}_{text}``.
 
 ### Example
 
+### Linux/Unix
 ```bash
 ./fw --handle bsky.app --directory media
+```
+
+### Windows
+```bash
+./fw.exe --handle bsky.app --directory media
 ```
 
 ## Options

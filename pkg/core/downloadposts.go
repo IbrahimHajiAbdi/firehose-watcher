@@ -19,15 +19,34 @@ type PostDetails struct {
 	Media    *utils.Media
 }
 
-func DownloadPost(APIClient api.APIClient, FSClient utils.FileSystem, repo string, repo_path string, directory string) {
+type DownloadClient interface {
+	FetchPostIdentifier(api.APIClient, string, string) (string, error)
+	FetchPostDetails(api.APIClient, string) (*PostDetails, error)
+	DownloadBlobs(api.APIClient, utils.FileSystem, *utils.Media, *PostDetails, string) error
+}
 
-	atUri, err := FetchPostIdentifier(APIClient, repo, repo_path)
+type DefaultDownloadClient struct{}
+
+func (dc *DefaultDownloadClient) FetchPostIdentifier(client api.APIClient, repo, path string) (string, error) {
+	return FetchPostIdentifier(client, repo, path)
+}
+
+func (dc *DefaultDownloadClient) FetchPostDetails(client api.APIClient, atUri string) (*PostDetails, error) {
+	return FetchPostDetails(client, atUri)
+}
+
+func (dc *DefaultDownloadClient) DownloadBlobs(APIClient api.APIClient, FSClient utils.FileSystem, media *utils.Media, postDetails *PostDetails, directory string) error {
+	return DownloadBlobs(APIClient, FSClient, media, postDetails, directory)
+}
+
+func DownloadPost(downloadClient DownloadClient, APIClient api.APIClient, FSClient utils.FileSystem, repo string, repo_path string, directory string) {
+	atUri, err := downloadClient.FetchPostIdentifier(APIClient, repo, repo_path)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	postDetails, err := FetchPostDetails(APIClient, atUri)
+	postDetails, err := downloadClient.FetchPostDetails(APIClient, atUri)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -36,7 +55,7 @@ func DownloadPost(APIClient api.APIClient, FSClient utils.FileSystem, repo strin
 	if postDetails.Media != nil {
 		media := postDetails.Media
 
-		err = downloadBlobs(APIClient, FSClient, media, postDetails, directory)
+		err = downloadClient.DownloadBlobs(APIClient, FSClient, media, postDetails, directory)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -57,7 +76,7 @@ func DownloadPost(APIClient api.APIClient, FSClient utils.FileSystem, repo strin
 	}
 }
 
-func downloadBlobs(APIClient api.APIClient, FSClient utils.FileSystem, media *utils.Media, postDetails *PostDetails, directory string) error {
+func DownloadBlobs(APIClient api.APIClient, FSClient utils.FileSystem, media *utils.Media, postDetails *PostDetails, directory string) error {
 	if media.ImageCid != nil {
 		for i, imageCid := range media.ImageCid {
 			res, err := api.GetBlob(APIClient, postDetails.Repo, imageCid)

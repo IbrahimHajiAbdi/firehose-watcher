@@ -5,12 +5,13 @@ import (
 	"firehose/pkg/utils"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/bluesky-social/indigo/api/atproto"
 	"github.com/bluesky-social/indigo/events"
 )
 
-func RepoCommit(did *atproto.IdentityResolveHandle_Output, directory string) *events.RepoStreamCallbacks {
+func RepoCommit(did *atproto.IdentityResolveHandle_Output, directory string, semaphore *chan struct{}, wg *sync.WaitGroup) *events.RepoStreamCallbacks {
 	APIClient := api.DefaultAPIClient{}
 	FSClient := utils.DefaultFileSystem{}
 	DownloadClient := DefaultDownloadClient{}
@@ -21,7 +22,16 @@ func RepoCommit(did *atproto.IdentityResolveHandle_Output, directory string) *ev
 			}
 
 			if evt.Ops[0].Action == "create" && strings.Contains(evt.Ops[0].Path, "feed") {
-				go DownloadPost(&DownloadClient, &APIClient, &FSClient, evt.Repo, evt.Ops[0].Path, directory)
+				wg.Add(1)
+
+				go func() {
+					defer wg.Done()
+
+					*semaphore <- struct{}{}
+					defer func() { <-*semaphore }()
+
+					DownloadPost(&DownloadClient, &APIClient, &FSClient, evt.Repo, evt.Ops[0].Path, directory)
+				}()
 			}
 
 			for _, op := range evt.Ops {

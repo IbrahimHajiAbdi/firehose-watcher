@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/bluesky-social/indigo/events"
 	"github.com/bluesky-social/indigo/events/schedulers/sequential"
@@ -15,12 +16,12 @@ import (
 )
 
 var (
-	handle    string
-	directory string
+	handle      string
+	directory   string
+	MAX_WORKERS = 4
 )
 
-// TODO: Add tests
-// TODO: Add graceful failure and logging what failed
+// TODO: logging
 var rootCmd = &cobra.Command{
 	Use:   "fw",
 	Short: "fw is a way to subscribe to a repo and download all likes, reposts and posts on Bluesky social media as it is committed to the repo",
@@ -45,9 +46,12 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Println("Now subsribed to:", handle)
+		fmt.Println("Now subscribed to:", handle)
 
-		rsc := core.RepoCommit(did, directory)
+		semaphore := make(chan struct{}, MAX_WORKERS)
+		var wg sync.WaitGroup
+
+		rsc := core.RepoCommit(did, directory, &semaphore, &wg)
 
 		sched := sequential.NewScheduler("myfirehose", rsc.EventHandler)
 		events.HandleRepoStream(context.Background(), con, sched, nil)

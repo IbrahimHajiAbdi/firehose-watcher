@@ -12,10 +12,8 @@ type Media struct {
 
 func ExtractMedia(record *bsky.FeedPost_Embed) *Media {
 	extractedMedia := Media{}
-
 	if record.EmbedRecordWithMedia != nil {
 		media := record.EmbedRecordWithMedia.Media
-
 		if media.EmbedImages != nil {
 			for _, image := range media.EmbedImages.Images {
 				extractedMedia.ImageCid = append(extractedMedia.ImageCid, image.Image.Ref.String())
@@ -25,8 +23,7 @@ func ExtractMedia(record *bsky.FeedPost_Embed) *Media {
 		}
 		if media.EmbedVideo != nil {
 			extractedMedia.VideoCid = media.EmbedVideo.Video.Ref.String()
-
-			mimeType := record.EmbedVideo.Video.MimeType
+			mimeType := media.EmbedVideo.Video.MimeType
 			extractedMedia.MediaType = FindExpression("[^/]*$", mimeType)
 		}
 	}

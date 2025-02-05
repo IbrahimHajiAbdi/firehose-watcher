@@ -15,17 +15,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	handle      string
-	directory   string
+const (
 	MAX_WORKERS = 4
 )
 
+var (
+	handle string
+)
+
 // TODO: logging
+// TODO: cleaning filenames to be valid on linux and windows file systems
 var rootCmd = &cobra.Command{
-	Use:   "fw",
-	Short: "fw is a way to subscribe to a repo and download all likes, reposts and posts on Bluesky social media as it is committed to the repo",
+	Use:   "fw --handle <handle> <directory>",
+	Short: "fw is a way to subscribe to a repo and download all likes, reposts and posts on Bluesky social media as it is committed to the repo.",
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		directory := args[0]
 		if _, err := os.Stat(directory); err != nil {
 			fmt.Println(err)
 			return
@@ -51,7 +56,7 @@ var rootCmd = &cobra.Command{
 		semaphore := make(chan struct{}, MAX_WORKERS)
 		var wg sync.WaitGroup
 
-		rsc := core.RepoCommit(did, directory, &semaphore, &wg)
+		rsc := core.RepoCommit(did, &directory, &semaphore, &wg)
 
 		sched := sequential.NewScheduler("myfirehose", rsc.EventHandler)
 		events.HandleRepoStream(context.Background(), con, sched, nil)
@@ -68,7 +73,5 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&handle, "handle", "", "Handle of the desired account")
-	rootCmd.PersistentFlags().StringVar(&directory, "directory", "", "Directory to download media")
 	rootCmd.MarkPersistentFlagRequired("handle")
-	rootCmd.MarkPersistentFlagRequired("directory")
 }

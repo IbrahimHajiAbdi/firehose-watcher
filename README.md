@@ -37,16 +37,14 @@ The files will be named in this format: ``{rkey}_{handle}_{text}``.
 
 #### Linux/Unix
 ```bash
-./fw --handle bsky.app --directory media
+./fw --handle bsky.app path/to/directory/
 ```
 
 #### Windows
 ```bash
-./fw.exe --handle bsky.app --directory media
+./fw.exe --handle bsky.app path/to/directory/
 ```
 
 ## Options
 - ``--handle``
-  - The handle of the account you want to subsribe to
-- ``--directory``
-  - Where you want to save the posts to
+  - The handle of the account you want to subscribe to. **Required**

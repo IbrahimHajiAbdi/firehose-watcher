@@ -11,7 +11,7 @@ import (
 	"github.com/bluesky-social/indigo/events"
 )
 
-func RepoCommit(did *atproto.IdentityResolveHandle_Output, directory string, semaphore *chan struct{}, wg *sync.WaitGroup) *events.RepoStreamCallbacks {
+func RepoCommit(did *atproto.IdentityResolveHandle_Output, directory *string, semaphore *chan struct{}, wg *sync.WaitGroup) *events.RepoStreamCallbacks {
 	APIClient := api.DefaultAPIClient{}
 	FSClient := utils.DefaultFileSystem{}
 	DownloadClient := DefaultDownloadClient{}
@@ -30,7 +30,7 @@ func RepoCommit(did *atproto.IdentityResolveHandle_Output, directory string, sem
 					*semaphore <- struct{}{}
 					defer func() { <-*semaphore }()
 
-					DownloadPost(&DownloadClient, &APIClient, &FSClient, evt.Repo, evt.Ops[0].Path, directory)
+					DownloadPost(&DownloadClient, &APIClient, &FSClient, evt.Repo, evt.Ops[0].Path, *directory)
 				}()
 			}
 

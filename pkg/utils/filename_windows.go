@@ -1,24 +1,43 @@
+//go:build windows
+
 package utils
 
 import (
 	"fmt"
 	"path"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 )
 
+var replacer = strings.NewReplacer(
+	"\"", "",
+	"\\", "",
+	"/", "",
+	"|", "",
+	":", "",
+	"<", "",
+	">", "",
+	"?", "",
+	"*", "",
+	"\n", " ",
+)
+
 func MakeFilepath(directory string, rkey string, handle string, text string, mediaType string, i int, maxBytes int) string {
 	filename := fmt.Sprintf("%s_%s_%s", rkey, handle, text)
-	filename = strings.Replace(filename, "/", "", -1)
-	var filepath string
+	filename = replacer.Replace(filename)
+	var filePath string
 	if i > 0 {
 		filename = FilenameLengthLimit(filename, maxBytes-(len(mediaType)+2+i))
-		filepath = fmt.Sprintf("%s/%s_%d.%s", directory, filename, i, mediaType)
+		filePath = filepath.Join(directory, filename, strconv.Itoa(i))
+		filePath += "." + mediaType
 	} else {
 		filename = FilenameLengthLimit(filename, maxBytes-(len(mediaType)+1))
-		filepath = fmt.Sprintf("%s/%s.%s", directory, filename, mediaType)
+		filePath = filepath.Join(directory, filename)
+		filePath += "." + mediaType
 	}
-	return path.Clean(filepath)
+	return path.Clean(filePath)
 }
 
 func FilenameLengthLimit(filename string, maxBytes int) string {

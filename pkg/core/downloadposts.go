@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"firehose/pkg/api"
 	"firehose/pkg/utils"
-	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/bluesky-social/indigo/api/bsky"
@@ -42,13 +42,13 @@ func (dc *DefaultDownloadClient) DownloadBlobs(APIClient api.APIClient, FSClient
 func DownloadPost(downloadClient DownloadClient, APIClient api.APIClient, FSClient utils.FileSystem, repo string, repo_path string, directory string) {
 	atUri, err := downloadClient.FetchPostIdentifier(APIClient, repo, repo_path)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return
 	}
 
 	postDetails, err := downloadClient.FetchPostDetails(APIClient, atUri)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return
 	}
 
@@ -57,7 +57,7 @@ func DownloadPost(downloadClient DownloadClient, APIClient api.APIClient, FSClie
 
 		err = downloadClient.DownloadBlobs(APIClient, FSClient, media, postDetails, directory)
 		if err != nil {
-			fmt.Println(err)
+			slog.Error(err.Error())
 			return
 		}
 	}
@@ -66,12 +66,12 @@ func DownloadPost(downloadClient DownloadClient, APIClient api.APIClient, FSClie
 
 	bytes, err := json.MarshalIndent(postDetails.Response, "", "	")
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return
 	}
 	err = utils.WriteFile(FSClient, filename, &bytes)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 		return
 	}
 }
@@ -81,7 +81,6 @@ func DownloadBlobs(APIClient api.APIClient, FSClient utils.FileSystem, media *ut
 		for i, imageCid := range media.ImageCid {
 			res, err := api.GetBlob(APIClient, postDetails.Repo, imageCid)
 			if err != nil {
-				fmt.Println(err)
 				return err
 			}
 			number := 0
@@ -107,7 +106,6 @@ func DownloadBlobs(APIClient api.APIClient, FSClient utils.FileSystem, media *ut
 	if media.VideoCid != "" {
 		res, err := api.GetBlob(APIClient, postDetails.Repo, media.VideoCid)
 		if err != nil {
-			fmt.Println(err)
 			return err
 		}
 		filename := utils.MakeFilepath(

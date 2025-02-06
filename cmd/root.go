@@ -24,7 +24,6 @@ var (
 )
 
 // TODO: logging
-// TODO: cleaning filenames to be valid on linux and windows file systems
 var rootCmd = &cobra.Command{
 	Use:   "fw --handle <handle> <directory>",
 	Short: "fw is a way to subscribe to a repo and download all likes, reposts and posts on Bluesky social media as it is committed to the repo.",
@@ -35,6 +34,14 @@ var rootCmd = &cobra.Command{
 			fmt.Println(err)
 			return
 		}
+
+		f, err := utils.MakeLogFile(directory)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		defer f.Close()
+		utils.SetupLogger(f)
 
 		uri := "wss://bsky.network/xrpc/com.atproto.sync.subscribeRepos"
 		con, _, err := websocket.DefaultDialer.Dial(uri, http.Header{})
@@ -60,7 +67,6 @@ var rootCmd = &cobra.Command{
 
 		sched := sequential.NewScheduler("myfirehose", rsc.EventHandler)
 		events.HandleRepoStream(context.Background(), con, sched, nil)
-
 	},
 }
 

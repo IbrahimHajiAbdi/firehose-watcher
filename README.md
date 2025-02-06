@@ -29,7 +29,7 @@ go build -o fw.exe
 ```
 
 ## Usage
-``fw`` will download the media attached to each post and metadata about the post itself to a given directory. 
+``fw`` will download the media attached to each post and metadata about the post itself to the given directory. 
 
 The files will be named in this format: ``{rkey}_{handle}_{text}``.
 

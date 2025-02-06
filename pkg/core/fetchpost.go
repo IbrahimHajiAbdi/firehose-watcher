@@ -15,13 +15,11 @@ func FetchPostIdentifier(client api.APIClient, repo, path string) (string, error
 
 	res, err := api.GetRecord(client, collection, repo, rkey)
 	if err != nil {
-		fmt.Println(err)
 		return "", err
 	}
 
 	bytes, err := res.Value.MarshalJSON()
 	if err != nil {
-		fmt.Println(err)
 		return "", err
 	}
 
@@ -29,7 +27,6 @@ func FetchPostIdentifier(client api.APIClient, repo, path string) (string, error
 
 	err = json.Unmarshal(bytes, &postDetails)
 	if err != nil {
-		fmt.Println(err)
 		return "", err
 	}
 
@@ -39,9 +36,7 @@ func FetchPostIdentifier(client api.APIClient, repo, path string) (string, error
 func FetchPostDetails(client api.APIClient, atUri string) (*PostDetails, error) {
 	res, err := api.GetPost(client, atUri)
 	if err != nil {
-		fmt.Println(err)
-		fmt.Println(atUri)
-		return nil, err
+		return nil, fmt.Errorf("error occured, post is either missing or deleted: %w with the ATURI: %s", err, atUri)
 	}
 
 	var postDetails PostDetails
@@ -59,16 +54,12 @@ func FetchPostDetails(client api.APIClient, atUri string) (*PostDetails, error) 
 
 	bytes, err := post.Record.MarshalJSON()
 	if err != nil {
-		fmt.Println(err)
-		fmt.Println(atUri)
-		return nil, err
+		return nil, fmt.Errorf("error occured while marshaling post to JSON: %w The post ATURI: %s", err, atUri)
 	}
 
 	err = json.Unmarshal(bytes, &record)
 	if err != nil {
-		fmt.Println(err)
-		fmt.Println(atUri)
-		return nil, err
+		return nil, fmt.Errorf("error occured while unmarshaling post JSON to type bsky.FeedPost: %w The post ATURI: %s", err, atUri)
 	}
 
 	postDetails.Text = record.Text

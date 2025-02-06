@@ -6,21 +6,22 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
-	"strconv"
+	"strings"
 	"unicode/utf8"
 )
 
 func MakeFilepath(directory string, rkey string, handle string, text string, mediaType string, i int, maxBytes int) string {
 	filename := fmt.Sprintf("%s_%s_%s", rkey, handle, text)
+	filename = strings.ReplaceAll(filename, "/", "")
 	var filePath string
 	if i > 0 {
 		filename = FilenameLengthLimit(filename, maxBytes-(len(mediaType)+2+i))
-		filePath = filepath.Join(directory, filename, strconv.Itoa(i))
-		filePath += "." + mediaType
+		filePath = filepath.Join(directory, filename)
+		filePath = fmt.Sprintf("%s_%d.%s", filePath, i, mediaType)
 	} else {
 		filename = FilenameLengthLimit(filename, maxBytes-(len(mediaType)+1))
 		filePath = filepath.Join(directory, filename)
-		filePath += "." + mediaType
+		filePath = fmt.Sprintf("%s.%s", filePath, mediaType)
 	}
 	return path.Clean(filePath)
 }

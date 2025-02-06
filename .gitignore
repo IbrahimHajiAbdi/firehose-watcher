@@ -5,3 +5,5 @@ plain/
 *.py
 .env
 go.sum
+fw
+fw.exe

@@ -45,12 +45,14 @@ func DownloadPost(downloadClient DownloadClient, APIClient api.APIClient, FSClie
 		slog.Error(err.Error())
 		return
 	}
+	slog.Info("retrieved post aturi", "aturi", atUri)
 
 	postDetails, err := downloadClient.FetchPostDetails(APIClient, atUri)
 	if err != nil {
 		slog.Error(err.Error())
 		return
 	}
+	slog.Info("retrieved post details", "details", postDetails)
 
 	if postDetails.Media != nil {
 		media := postDetails.Media
@@ -60,6 +62,7 @@ func DownloadPost(downloadClient DownloadClient, APIClient api.APIClient, FSClie
 			slog.Error(err.Error())
 			return
 		}
+		slog.Info("downloaded blobs associated with post", "aturi", atUri)
 	}
 
 	filename := utils.MakeFilepath(directory, postDetails.Rkey, postDetails.Handle, postDetails.Text, "json", 0, 255)
@@ -74,6 +77,7 @@ func DownloadPost(downloadClient DownloadClient, APIClient api.APIClient, FSClie
 		slog.Error(err.Error())
 		return
 	}
+	slog.Info("wrote to file system post metadata and blob(s) associated with post", "aturi", atUri)
 }
 
 func DownloadBlobs(APIClient api.APIClient, FSClient utils.FileSystem, media *utils.Media, postDetails *PostDetails, directory string) error {

@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/bluesky-social/indigo/api/atproto"
@@ -39,6 +40,9 @@ var (
 			MaxInterval:         32 * time.Second,
 		})
 	MaxRetries = backoff.WithMaxTries(5)
+	Notify     = backoff.WithNotify(func(err error, time time.Duration) {
+		slog.Error("error occured when making API request, attempting to retry", "retry-after", time.Seconds(), "error", err.Error())
+	})
 )
 
 func GetBlob(client APIClient, repo, cid string) (*[]byte, error) {
@@ -52,7 +56,7 @@ func GetBlob(client APIClient, repo, cid string) (*[]byte, error) {
 		}
 		return &res, nil
 	}
-	res, err := backoff.Retry(context.TODO(), operation, BackoffOpts, MaxRetries)
+	res, err := backoff.Retry(context.TODO(), operation, BackoffOpts, MaxRetries, Notify)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +74,7 @@ func GetRecord(client APIClient, collection, repo, rkey string) (*atproto.RepoGe
 		}
 		return res, nil
 	}
-	res, err := backoff.Retry(context.TODO(), operation, BackoffOpts, MaxRetries)
+	res, err := backoff.Retry(context.TODO(), operation, BackoffOpts, MaxRetries, Notify)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +92,7 @@ func GetPost(client APIClient, atUri string) (*bsky.FeedGetPosts_Output, error) 
 		}
 		return res, nil
 	}
-	res, err := backoff.Retry(context.TODO(), operation, BackoffOpts, MaxRetries)
+	res, err := backoff.Retry(context.TODO(), operation, BackoffOpts, MaxRetries, Notify)
 	if err != nil {
 		return nil, err
 	}

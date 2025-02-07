@@ -1,9 +1,10 @@
 media/
-cipher/
-plain/ 
 *.json
 *.py
 .env
 go.sum
 fw
 fw.exe
+*venv/
+*.service
+*.conf

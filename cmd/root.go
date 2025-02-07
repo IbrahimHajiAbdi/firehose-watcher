@@ -5,6 +5,7 @@ import (
 	"firehose/pkg/core"
 	"firehose/pkg/utils"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"sync"
@@ -23,7 +24,6 @@ var (
 	handle string
 )
 
-// TODO: logging
 var rootCmd = &cobra.Command{
 	Use:   "fw --handle <handle> <directory>",
 	Short: "fw is a way to subscribe to a repo and download all likes, reposts and posts on Bluesky social media as it is committed to the repo.",
@@ -66,7 +66,7 @@ var rootCmd = &cobra.Command{
 		rsc := core.RepoCommit(did, &directory, &semaphore, &wg)
 
 		sched := sequential.NewScheduler("myfirehose", rsc.EventHandler)
-		events.HandleRepoStream(context.Background(), con, sched, nil)
+		events.HandleRepoStream(context.Background(), con, sched, slog.Default())
 	},
 }
 

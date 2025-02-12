@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"encoding/json"
 	"firehose/pkg/api"
 	"firehose/pkg/utils"
@@ -9,11 +10,11 @@ import (
 	"github.com/bluesky-social/indigo/api/bsky"
 )
 
-func FetchPostIdentifier(client api.APIClient, repo, path string) (string, error) {
+func FetchPostIdentifier(ctx context.Context, client api.APIClient, repo, path string) (string, error) {
 	rkey := utils.FindExpression("[^/]*$", path)
 	collection := utils.FindExpression("^[^/]*", path)
 
-	res, err := api.GetRecord(client, collection, repo, rkey)
+	res, err := api.GetRecord(ctx, client, collection, repo, rkey)
 	if err != nil {
 		return "", err
 	}
@@ -33,10 +34,10 @@ func FetchPostIdentifier(client api.APIClient, repo, path string) (string, error
 	return postDetails.Subject.Uri, nil
 }
 
-func FetchPostDetails(client api.APIClient, atUri string) (*PostDetails, error) {
-	res, err := api.GetPost(client, atUri)
+func FetchPostDetails(ctx context.Context, client api.APIClient, atUri string) (*PostDetails, error) {
+	res, err := api.GetPost(ctx, client, atUri)
 	if err != nil {
-		return nil, fmt.Errorf("error occured, post is either missing or deleted: %w with the ATURI: %s", err, atUri)
+		return nil, fmt.Errorf("error occurred, post is either missing or deleted: %w with the ATURI: %s", err, atUri)
 	}
 
 	var postDetails PostDetails

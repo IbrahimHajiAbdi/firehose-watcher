@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"encoding/json"
 	"firehose/pkg/api"
 	"firehose/pkg/utils"
@@ -20,34 +21,34 @@ type PostDetails struct {
 }
 
 type DownloadClient interface {
-	FetchPostIdentifier(api.APIClient, string, string) (string, error)
-	FetchPostDetails(api.APIClient, string) (*PostDetails, error)
-	DownloadBlobs(api.APIClient, utils.FileSystem, *utils.Media, *PostDetails, string) error
+	FetchPostIdentifier(ctx context.Context, client api.APIClient, repo, path string) (string, error)
+	FetchPostDetails(ctx context.Context, client api.APIClient, atUri string) (*PostDetails, error)
+	DownloadBlobs(ctx context.Context, APIClient api.APIClient, FSClient utils.FileSystem, media *utils.Media, postDetails *PostDetails, directory string) error
 }
 
 type DefaultDownloadClient struct{}
 
-func (dc *DefaultDownloadClient) FetchPostIdentifier(client api.APIClient, repo, path string) (string, error) {
-	return FetchPostIdentifier(client, repo, path)
+func (dc *DefaultDownloadClient) FetchPostIdentifier(ctx context.Context, client api.APIClient, repo, path string) (string, error) {
+	return FetchPostIdentifier(ctx, client, repo, path)
 }
 
-func (dc *DefaultDownloadClient) FetchPostDetails(client api.APIClient, atUri string) (*PostDetails, error) {
-	return FetchPostDetails(client, atUri)
+func (dc *DefaultDownloadClient) FetchPostDetails(ctx context.Context, client api.APIClient, atUri string) (*PostDetails, error) {
+	return FetchPostDetails(ctx, client, atUri)
 }
 
-func (dc *DefaultDownloadClient) DownloadBlobs(APIClient api.APIClient, FSClient utils.FileSystem, media *utils.Media, postDetails *PostDetails, directory string) error {
-	return DownloadBlobs(APIClient, FSClient, media, postDetails, directory)
+func (dc *DefaultDownloadClient) DownloadBlobs(ctx context.Context, APIClient api.APIClient, FSClient utils.FileSystem, media *utils.Media, postDetails *PostDetails, directory string) error {
+	return DownloadBlobs(ctx, APIClient, FSClient, media, postDetails, directory)
 }
 
-func DownloadPost(downloadClient DownloadClient, APIClient api.APIClient, FSClient utils.FileSystem, repo string, repo_path string, directory string) {
-	atUri, err := downloadClient.FetchPostIdentifier(APIClient, repo, repo_path)
+func DownloadPost(ctx context.Context, downloadClient DownloadClient, APIClient api.APIClient, FSClient utils.FileSystem, repo string, repo_path string, directory string) {
+	atUri, err := downloadClient.FetchPostIdentifier(ctx, APIClient, repo, repo_path)
 	if err != nil {
 		slog.Error(err.Error())
 		return
 	}
 	slog.Info("retrieved post aturi", "aturi", atUri)
 
-	postDetails, err := downloadClient.FetchPostDetails(APIClient, atUri)
+	postDetails, err := downloadClient.FetchPostDetails(ctx, APIClient, atUri)
 	if err != nil {
 		slog.Error(err.Error())
 		return
@@ -57,7 +58,7 @@ func DownloadPost(downloadClient DownloadClient, APIClient api.APIClient, FSClie
 	if postDetails.Media != nil {
 		media := postDetails.Media
 
-		err = downloadClient.DownloadBlobs(APIClient, FSClient, media, postDetails, directory)
+		err = downloadClient.DownloadBlobs(ctx, APIClient, FSClient, media, postDetails, directory)
 		if err != nil {
 			slog.Error(err.Error())
 			return
@@ -80,7 +81,7 @@ func DownloadPost(downloadClient DownloadClient, APIClient api.APIClient, FSClie
 	slog.Info("wrote to file system post metadata and blob(s) associated with post", "aturi", atUri)
 }
 
-func DownloadBlobs(APIClient api.APIClient, FSClient utils.FileSystem, media *utils.Media, postDetails *PostDetails, directory string) error {
+func DownloadBlobs(ctx context.Context, APIClient api.APIClient, FSClient utils.FileSystem, media *utils.Media, postDetails *PostDetails, directory string) error {
 	if media.ImageCid != nil {
 		for i, imageCid := range media.ImageCid {
 			res, err := api.GetBlob(APIClient, postDetails.Repo, imageCid)
@@ -100,8 +101,7 @@ func DownloadBlobs(APIClient api.APIClient, FSClient utils.FileSystem, media *ut
 				number,
 				255,
 			)
-			err = utils.WriteFile(FSClient, filename, res)
-			if err != nil {
+			if err := utils.WriteFile(FSClient, filename, res); err != nil {
 				return err
 			}
 			time.Sleep(500 * time.Millisecond)
@@ -121,8 +121,7 @@ func DownloadBlobs(APIClient api.APIClient, FSClient utils.FileSystem, media *ut
 			0,
 			255,
 		)
-		err = utils.WriteFile(FSClient, filename, res)
-		if err != nil {
+		if err := utils.WriteFile(FSClient, filename, res); err != nil {
 			return err
 		}
 		time.Sleep(500 * time.Millisecond)

@@ -41,7 +41,7 @@ var (
 		})
 	MaxRetries = backoff.WithMaxTries(5)
 	Notify     = backoff.WithNotify(func(err error, time time.Duration) {
-		slog.Error("error occured when making API request, attempting to retry", "retry-after", time.Seconds(), "error", err.Error())
+		slog.Error("error occurred when making API request, attempting to retry", "retry-after", time.Seconds(), "error", err.Error())
 	})
 )
 
@@ -63,9 +63,8 @@ func GetBlob(client APIClient, repo, cid string) (*[]byte, error) {
 	return res, nil
 }
 
-func GetRecord(client APIClient, collection, repo, rkey string) (*atproto.RepoGetRecord_Output, error) {
+func GetRecord(ctx context.Context, client APIClient, collection, repo, rkey string) (*atproto.RepoGetRecord_Output, error) {
 	operation := func() (*atproto.RepoGetRecord_Output, error) {
-		ctx := context.Background()
 		res, err := client.RepoGetRecord(ctx, &xrpc.Client{
 			Host: "https://bsky.social",
 		}, "", collection, repo, rkey)
@@ -74,16 +73,15 @@ func GetRecord(client APIClient, collection, repo, rkey string) (*atproto.RepoGe
 		}
 		return res, nil
 	}
-	res, err := backoff.Retry(context.TODO(), operation, BackoffOpts, MaxRetries, Notify)
+	res, err := backoff.Retry(ctx, operation, BackoffOpts, MaxRetries, Notify)
 	if err != nil {
 		return nil, err
 	}
 	return res, nil
 }
 
-func GetPost(client APIClient, atUri string) (*bsky.FeedGetPosts_Output, error) {
+func GetPost(ctx context.Context, client APIClient, atUri string) (*bsky.FeedGetPosts_Output, error) {
 	operation := func() (*bsky.FeedGetPosts_Output, error) {
-		ctx := context.Background()
 		res, err := client.FeedGetPosts(ctx, &xrpc.Client{
 			Host: "https://public.api.bsky.app",
 		}, []string{atUri})
@@ -92,7 +90,7 @@ func GetPost(client APIClient, atUri string) (*bsky.FeedGetPosts_Output, error) 
 		}
 		return res, nil
 	}
-	res, err := backoff.Retry(context.TODO(), operation, BackoffOpts, MaxRetries, Notify)
+	res, err := backoff.Retry(ctx, operation, BackoffOpts, MaxRetries, Notify)
 	if err != nil {
 		return nil, err
 	}

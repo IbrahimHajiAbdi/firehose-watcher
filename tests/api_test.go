@@ -89,8 +89,7 @@ func (suite *APITestSuite) TestGetPosts_Success() {
 	expectedOutput := &bsky.FeedGetPosts_Output{}
 	mockClient.On("FeedGetPosts", mock.Anything, mock.Anything, mock.Anything).Return(expectedOutput, nil)
 
-	res, err := api.GetPost(mockClient, "mock_uri")
-
+	res, err := api.GetPost(context.Background(), mockClient, "mock_uri")
 	suite.Assert().Nil(err)
 	suite.Assert().Equal(expectedOutput, res)
 	mockClient.AssertExpectations(suite.T())
@@ -100,8 +99,7 @@ func (suite *APITestSuite) TestGetPosts_Failure() {
 	mockClient := new(MockAPIClient)
 	mockClient.On("FeedGetPosts", mock.Anything, mock.Anything, mock.Anything).Return((*bsky.FeedGetPosts_Output)(nil), errors.New("error"))
 
-	res, err := api.GetPost(mockClient, "mock_uri")
-
+	res, err := api.GetPost(context.Background(), mockClient, "mock_uri")
 	suite.Assert().Nil(res)
 	suite.Assert().Error(err)
 	mockClient.AssertExpectations(suite.T())
@@ -113,7 +111,7 @@ func (suite *APITestSuite) TestGetRecord_Success() {
 	mockClient.On("RepoGetRecord", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(expectedOutput, nil)
 
-	res, err := api.GetRecord(mockClient, "", "", "")
+	res, err := api.GetRecord(context.Background(), mockClient, "", "", "")
 
 	suite.Assert().Nil(err)
 	suite.Assert().Equal(expectedOutput, res)
@@ -125,7 +123,7 @@ func (suite *APITestSuite) TestGetRecord_Failure() {
 	mockClient.On("RepoGetRecord", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return((*atproto.RepoGetRecord_Output)(nil), errors.New("error"))
 
-	res, err := api.GetRecord(mockClient, "", "", "")
+	res, err := api.GetRecord(context.Background(), mockClient, "", "", "")
 
 	suite.Assert().Nil(res)
 	suite.Assert().Error(err)

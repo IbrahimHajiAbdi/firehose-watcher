@@ -1,6 +1,7 @@
 package _tests
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"firehose/pkg/api"
@@ -47,18 +48,18 @@ type MockDownloadClient struct {
 	mock.Mock
 }
 
-func (m *MockDownloadClient) FetchPostIdentifier(client api.APIClient, repo, path string) (string, error) {
-	args := m.Called(client, repo, path)
+func (m *MockDownloadClient) FetchPostIdentifier(ctx context.Context, client api.APIClient, repo, path string) (string, error) {
+	args := m.Called(ctx, client, repo, path)
 	return args.Get(0).(string), args.Error(1)
 }
 
-func (m *MockDownloadClient) FetchPostDetails(client api.APIClient, atUri string) (*core.PostDetails, error) {
-	args := m.Called(client, atUri)
+func (m *MockDownloadClient) FetchPostDetails(ctx context.Context, client api.APIClient, atUri string) (*core.PostDetails, error) {
+	args := m.Called(ctx, client, atUri)
 	return args.Get(0).(*core.PostDetails), args.Error(1)
 }
 
-func (m *MockDownloadClient) DownloadBlobs(APIClient api.APIClient, FSClient utils.FileSystem, media *utils.Media, postDetails *core.PostDetails, directory string) error {
-	args := m.Called(APIClient, FSClient, media, postDetails, directory)
+func (m *MockDownloadClient) DownloadBlobs(ctx context.Context, APIClient api.APIClient, FSClient utils.FileSystem, media *utils.Media, postDetails *core.PostDetails, directory string) error {
+	args := m.Called(ctx, APIClient, FSClient, media, postDetails, directory)
 	return args.Error(0)
 }
 
@@ -108,7 +109,7 @@ func (suite *CoreTestSuite) TestFetchPostIdentifier_Success() {
 		"rkey",
 	).Return(mockOutput, nil)
 
-	res, err := core.FetchPostIdentifier(mockClient, "repo", "collection/rkey")
+	res, err := core.FetchPostIdentifier(context.Background(), mockClient, "repo", "collection/rkey")
 
 	suite.Assert().NoError(err)
 	suite.Assert().Equal("at://did:plc:vdnlidrx2n2nitqimqymzutr/app.bsky.feed.post/3lgmu7ro53226", res)
@@ -130,7 +131,7 @@ func (suite *CoreTestSuite) TestFetchPostIdentifier_Failure_Record() {
 		"rkey",
 	).Return((*atproto.RepoGetRecord_Output)(nil), errors.New(""))
 
-	res, err := core.FetchPostIdentifier(mockClient, "repo", "collection/rkey")
+	res, err := core.FetchPostIdentifier(context.Background(), mockClient, "repo", "collection/rkey")
 
 	suite.Assert().Error(err)
 	suite.Assert().Equal("", res)
@@ -163,7 +164,7 @@ func (suite *CoreTestSuite) TestFetchPostIdentifier_Failure_MarshalJSON() {
 		"rkey",
 	).Return(mockOutput, nil)
 
-	res, err := core.FetchPostIdentifier(mockClient, "repo", "collection/rkey")
+	res, err := core.FetchPostIdentifier(context.Background(), mockClient, "repo", "collection/rkey")
 
 	suite.Assert().Error(err)
 	suite.Assert().Equal("", res)
@@ -198,7 +199,7 @@ func (suite *CoreTestSuite) TestFetchPostDetails_Success() {
 		mock.Anything,
 	).Return(&mockRecord, nil)
 
-	postDetails, err := core.FetchPostDetails(mockClient, "at://example/repo/rkey")
+	postDetails, err := core.FetchPostDetails(context.Background(), mockClient, "at://example/repo/rkey")
 
 	suite.Assert().NoError(err)
 	suite.Assert().NotNil(postDetails)
@@ -225,7 +226,7 @@ func (suite *CoreTestSuite) TestFetchPostDetails_Failure_No_Posts() {
 		mock.Anything,
 	).Return(&mockRecord, nil)
 
-	postDetails, err := core.FetchPostDetails(mockClient, "at://example/repo/rkey")
+	postDetails, err := core.FetchPostDetails(context.Background(), mockClient, "at://example/repo/rkey")
 
 	suite.Assert().Error(err)
 	suite.Assert().Nil(postDetails)
@@ -256,7 +257,7 @@ func (suite *CoreTestSuite) TestDownloadBlobs_Success_Images() {
 	mockFile.On("Close").Return(nil)
 	mockFS.On("OpenFile", mock.Anything, mock.Anything, mock.Anything).Return(mockFile, nil)
 
-	err := core.DownloadBlobs(mockClient, mockFS, &mockMedia, mockPostDetails, "example_dir")
+	err := core.DownloadBlobs(context.Background(), mockClient, mockFS, &mockMedia, mockPostDetails, "example_dir")
 
 	suite.Assert().Nil(err)
 
@@ -288,7 +289,7 @@ func (suite *CoreTestSuite) TestDownloadBlobs_Success_Video() {
 	mockFile.On("Close").Return(nil)
 	mockFS.On("OpenFile", mock.Anything, mock.Anything, mock.Anything).Return(mockFile, nil)
 
-	err := core.DownloadBlobs(mockClient, mockFS, &mockMedia, mockPostDetails, "example_dir")
+	err := core.DownloadBlobs(context.Background(), mockClient, mockFS, &mockMedia, mockPostDetails, "example_dir")
 
 	suite.Assert().Nil(err)
 
@@ -316,7 +317,7 @@ func (suite *CoreTestSuite) TestDownloadBlobs_Failure_API() {
 
 	mockClient.On("SyncGetBlob", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(([]byte)(nil), errors.New(""))
 
-	err := core.DownloadBlobs(mockClient, mockFS, &mockMedia, mockPostDetails, "example_dir")
+	err := core.DownloadBlobs(context.Background(), mockClient, mockFS, &mockMedia, mockPostDetails, "example_dir")
 
 	suite.Assert().Error(err)
 
@@ -346,7 +347,7 @@ func (suite *CoreTestSuite) TestDownloadBlobs_Failure_Write_File() {
 	mockFile.On("Write", mock.Anything).Return(0, errors.New(""))
 	mockFile.On("Close").Return(nil)
 
-	err := core.DownloadBlobs(mockClient, mockFS, &mockMedia, mockPostDetails, "example_dir")
+	err := core.DownloadBlobs(context.Background(), mockClient, mockFS, &mockMedia, mockPostDetails, "example_dir")
 
 	suite.Assert().Error(err)
 
@@ -376,7 +377,7 @@ func (suite *CoreTestSuite) TestDownloadBlobs_Failure_Open_File() {
 	mockClient.On("SyncGetBlob", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]byte("blob data"), nil)
 	mockFS.On("OpenFile", mock.Anything, mock.Anything, mock.Anything).Return(mockFile, errors.New(""))
 
-	err := core.DownloadBlobs(mockClient, mockFS, &mockMedia, mockPostDetails, "example_dir")
+	err := core.DownloadBlobs(context.Background(), mockClient, mockFS, &mockMedia, mockPostDetails, "example_dir")
 
 	suite.Assert().Error(err)
 
@@ -405,11 +406,11 @@ func (suite *CoreTestSuite) TestDownloadPost_Success() {
 	mockFile.On("Close").Return(nil)
 	mockFS.On("OpenFile", mock.Anything, mock.Anything, mock.Anything).Return(mockFile, nil)
 
-	mockClient.On("FetchPostIdentifier", mockAPIClient, mock.Anything, mock.Anything).Return(mockAtUri, nil)
-	mockClient.On("FetchPostDetails", mockAPIClient, mockAtUri).Return(mockPostDetails, nil)
-	mockClient.On("DownloadBlobs", mockAPIClient, mockFS, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mockClient.On("FetchPostIdentifier", mock.Anything, mockAPIClient, mock.Anything, mock.Anything).Return(mockAtUri, nil)
+	mockClient.On("FetchPostDetails", mock.Anything, mockAPIClient, mockAtUri).Return(mockPostDetails, nil)
+	mockClient.On("DownloadBlobs", mock.Anything, mockAPIClient, mockFS, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-	core.DownloadPost(mockClient, mockAPIClient, mockFS, "repo_string", "repo_path", "dir")
+	core.DownloadPost(context.Background(), mockClient, mockAPIClient, mockFS, "repo_string", "repo_path", "dir")
 	mockFile.AssertExpectations(suite.T())
 	mockAPIClient.AssertExpectations(suite.T())
 	mockFS.AssertExpectations(suite.T())

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"firehose/pkg/api"
 	"firehose/pkg/core"
 	"firehose/pkg/utils"
 	"fmt"
@@ -26,18 +27,18 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:   "fw --handle <handle> <directory>",
-	Short: "fw is a way to subscribe to a repo and download all likes, reposts and posts on Bluesky social media as it is committed to the repo.",
+	Short: "fw is a CLI tool to subscribe to a repo and download likes, reposts and posts as they are committed.",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		directory := args[0]
 		if _, err := os.Stat(directory); err != nil {
-			fmt.Println(err)
+			slog.Error("Directory does not exist", "error", err)
 			return
 		}
 
 		f, err := utils.MakeLogFile(directory)
 		if err != nil {
-			fmt.Println(err)
+			slog.Error("Error creating log file", "error", err)
 			return
 		}
 		defer f.Close()
@@ -46,15 +47,14 @@ var rootCmd = &cobra.Command{
 		uri := "wss://bsky.network/xrpc/com.atproto.sync.subscribeRepos"
 		con, _, err := websocket.DefaultDialer.Dial(uri, http.Header{})
 		if err != nil {
-			fmt.Println(err)
+			slog.Error("WebSocket dial error", "error", err)
 			return
 		}
 
 		client := utils.DefaultHandleResolver{}
 		did, err := utils.ResolveHandle(&client, handle)
-
 		if err != nil {
-			fmt.Println(err)
+			slog.Error("Error resolving handle", "error", err)
 			return
 		}
 
@@ -63,7 +63,11 @@ var rootCmd = &cobra.Command{
 		semaphore := make(chan struct{}, MAX_WORKERS)
 		var wg sync.WaitGroup
 
-		rsc := core.RepoCommit(did, &directory, &semaphore, &wg)
+		APIClient := api.DefaultAPIClient{}
+		FSClient := utils.DefaultFileSystem{}
+		DownlaodClient := core.DefaultDownloadClient{}
+
+		rsc := core.RepoCommit(did, directory, &APIClient, &FSClient, &DownlaodClient, &semaphore, &wg)
 
 		sched := sequential.NewScheduler("myfirehose", rsc.EventHandler)
 		events.HandleRepoStream(context.Background(), con, sched, slog.Default())
@@ -72,7 +76,7 @@ var rootCmd = &cobra.Command{
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		slog.Error("Error executing command", "error", err)
 		os.Exit(1)
 	}
 }

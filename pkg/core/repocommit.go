@@ -1,9 +1,10 @@
 package core
 
 import (
+	"context"
 	"firehose/pkg/api"
 	"firehose/pkg/utils"
-	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 
@@ -11,35 +12,34 @@ import (
 	"github.com/bluesky-social/indigo/events"
 )
 
-func RepoCommit(did *atproto.IdentityResolveHandle_Output, directory *string, semaphore *chan struct{}, wg *sync.WaitGroup) *events.RepoStreamCallbacks {
-	APIClient := api.DefaultAPIClient{}
-	FSClient := utils.DefaultFileSystem{}
-	DownloadClient := DefaultDownloadClient{}
-	var rsc = &events.RepoStreamCallbacks{
+func RepoCommit(
+	did *atproto.IdentityResolveHandle_Output,
+	directory string,
+	APIClient api.APIClient,
+	FSClient utils.FileSystem,
+	downloadClient DownloadClient,
+	semaphore *chan struct{},
+	wg *sync.WaitGroup,
+) *events.RepoStreamCallbacks {
+	return &events.RepoStreamCallbacks{
 		RepoCommit: func(evt *atproto.SyncSubscribeRepos_Commit) error {
 			if evt.Repo != did.Did {
 				return nil
 			}
-
-			if evt.Ops[0].Action == "create" && strings.Contains(evt.Ops[0].Path, "feed") {
-				wg.Add(1)
-
-				go func() {
-					defer wg.Done()
-
-					*semaphore <- struct{}{}
-					defer func() { <-*semaphore }()
-
-					DownloadPost(&DownloadClient, &APIClient, &FSClient, evt.Repo, evt.Ops[0].Path, *directory)
-				}()
-			}
-
 			for _, op := range evt.Ops {
-				fmt.Printf(" - %s record %s\n", op.Action, op.Path)
+				if op.Action == "create" && strings.Contains(op.Path, "feed") {
+					wg.Add(1)
+					go func(path string) {
+						(*semaphore) <- struct{}{}
+						defer func() { <-(*semaphore) }()
+						defer wg.Done()
+						DownloadPost(context.Background(), downloadClient, APIClient, FSClient, evt.Repo, path, directory)
+					}(op.Path)
+				} else {
+					slog.Info("Operation received", "action", op.Action, "path", op.Path)
+				}
 			}
-
 			return nil
 		},
 	}
-	return rsc
 }

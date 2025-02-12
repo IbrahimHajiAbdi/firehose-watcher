@@ -10,9 +10,14 @@ import (
 	"unicode/utf8"
 )
 
+var replacer = strings.NewReplacer(
+	"/", "",
+	"\n", " ",
+)
+
 func MakeFilepath(directory string, rkey string, handle string, text string, mediaType string, i int, maxBytes int) string {
 	filename := fmt.Sprintf("%s_%s_%s", rkey, handle, text)
-	filename = strings.ReplaceAll(filename, "/", "")
+	filename = replacer.Replace(filename)
 	var filePath string
 	if i > 0 {
 		filename = FilenameLengthLimit(filename, maxBytes-(len(mediaType)+2+i))
